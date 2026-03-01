@@ -43,42 +43,30 @@ app.post('/api/register', (req, res) => {
     );
 });
 
-// API: Concluir Inscrição
+// API: Concluir Inscrição (Apenas confirmação)
 app.post('/api/complete', (req, res) => {
-    const { email, whatsapp, tshirt_size, transaction_id } = req.body;
-    console.log(`Recebida solicitação de conclusão para: ${email}`);
-    console.log(`Dados recebidos: WhatsApp=${whatsapp}, T-Shirt=${tshirt_size}, TransactionID=${transaction_id}`);
+    const { email, transaction_id } = req.body;
+    console.log(`Recebida confirmação de pagamento para: ${email}`);
 
-    if (!email || !whatsapp || !tshirt_size) {
-        console.error('Dados incompletos na conclusão.');
-        return res.status(400).json({ error: 'Dados incompletos.' });
+    if (!email) {
+        return res.status(400).json({ error: 'Email é obrigatório.' });
     }
 
-    // Atualiza com o código da transação para verificação manual
-    // Primeiro verifica se o email existe
-    db.get('SELECT id FROM registrations WHERE email = ?', [email], (err, row) => {
-        if (err) {
-             console.error('Erro ao verificar email:', err);
-             return res.status(500).json({ error: err.message });
-        }
-        if (!row) {
-             console.error('Email não encontrado para atualização:', email);
-             return res.status(404).json({ error: 'Inscrição não encontrada. Gere o PIX novamente.' });
-        }
-
-        db.run(
-            `UPDATE registrations SET whatsapp = ?, tshirt_size = ?, payment_status = 'completed', payment_id = ?, payment_confirmed_at = CURRENT_TIMESTAMP WHERE email = ?`,
-            [whatsapp, tshirt_size, transaction_id, email],
-            function(err) {
-                if (err) {
-                    console.error('Erro ao atualizar banco:', err);
-                    return res.status(500).json({ error: err.message });
-                }
-                console.log(`Inscrição concluída com sucesso para ${email}. Rows affected: ${this.changes}`);
-                res.json({ success: true });
+    // Atualiza apenas o status e ID da transação
+    db.run(
+        `UPDATE registrations SET payment_status = 'completed', payment_id = ?, payment_confirmed_at = CURRENT_TIMESTAMP WHERE email = ?`,
+        [transaction_id, email],
+        function(err) {
+            if (err) {
+                console.error('Erro ao atualizar banco:', err);
+                return res.status(500).json({ error: err.message });
             }
-        );
-    });
+            if (this.changes === 0) {
+                return res.status(404).json({ error: 'Inscrição não encontrada.' });
+            }
+            res.json({ success: true });
+        }
+    );
 });
 
 // API: Listar Inscrições (Dashboard)
@@ -202,9 +190,9 @@ app.post('/api/delete-registration', (req, res) => {
 
 // API: Gerar PIX (Automação)
 app.post('/api/generate-pix', (req, res) => {
-    const { name, email } = req.body;
-    if (!name || !email) {
-        return res.status(400).json({ error: 'Nome e Email são obrigatórios.' });
+    const { name, email, whatsapp, tshirt_size } = req.body;
+    if (!name || !email || !whatsapp || !tshirt_size) {
+        return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
     }
 
     console.log(`Iniciando geração de PIX para: ${name} (${email})`);
@@ -235,17 +223,20 @@ app.post('/api/generate-pix', (req, res) => {
             const result = JSON.parse(lastLine);
 
             if (result.success && result.pixCode) {
-                // Atualiza o banco de dados com o ID do pagamento
+                // Atualiza o banco de dados com o ID do pagamento e todos os dados
                 const paymentId = result.paymentId || null;
                 
                 db.run(
-                    `INSERT INTO registrations (name, email, payment_status, payment_method, payment_id) VALUES (?, ?, 'pending_pix', 'pix', ?)
+                    `INSERT INTO registrations (name, email, whatsapp, tshirt_size, payment_status, payment_method, payment_id) 
+                     VALUES (?, ?, ?, ?, 'pending_pix', 'pix', ?)
                      ON CONFLICT(email) DO UPDATE SET 
-                     name = excluded.name, 
+                     name = excluded.name,
+                     whatsapp = excluded.whatsapp,
+                     tshirt_size = excluded.tshirt_size,
                      payment_status = 'pending_pix',
                      payment_method = 'pix',
                      payment_id = excluded.payment_id`,
-                    [name, email, paymentId],
+                    [name, email, whatsapp, tshirt_size, paymentId],
                     (err) => {
                         if (err) console.error('Erro ao salvar no banco:', err);
                     }

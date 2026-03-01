@@ -61,6 +61,19 @@
                 <label>E-mail:</label>
                 <input type="email" id="email" placeholder="seu@email.com" required>
             </div>
+            <div class="form-group">
+                <label>WhatsApp:</label>
+                <input type="tel" id="whatsapp" placeholder="(00) 00000-0000" required>
+            </div>
+            <div class="form-group">
+                <label>Tamanho da Camiseta:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="tshirt" value="P"> P</label>
+                    <label><input type="radio" name="tshirt" value="M" checked> M</label>
+                    <label><input type="radio" name="tshirt" value="G"> G</label>
+                    <label><input type="radio" name="tshirt" value="GG"> GG</label>
+                </div>
+            </div>
             
             <div class="form-group checkbox-group" style="display: flex; align-items: flex-start; gap: 10px; margin-top: 20px;">
                 <input type="checkbox" id="terms" required style="width: 20px; height: 20px; margin-top: 2px;">
@@ -98,23 +111,11 @@
         </div>
 
         <!-- Passo 4: Detalhes Finais -->
-        <div id="stepDetails" class="hidden">
+        <div id="stepDetails" class="hidden" style="text-align: center;">
             <h2>Pagamento Informado</h2>
-            <p>Para finalizar sua inscrição, informe:</p>
-            <div class="form-group">
-                <label>WhatsApp:</label>
-                <input type="tel" id="whatsapp" placeholder="(00) 00000-0000" required>
-            </div>
-            <div class="form-group">
-                <label>Tamanho da Camiseta:</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="tshirt" value="P"> P</label>
-                    <label><input type="radio" name="tshirt" value="M" checked> M</label>
-                    <label><input type="radio" name="tshirt" value="G"> G</label>
-                    <label><input type="radio" name="tshirt" value="GG"> GG</label>
-                </div>
-            </div>
-            <button onclick="finalizeRegistration()" class="btn-primary">Concluir Inscrição</button>
+            <p>Sua inscrição está sendo processada.</p>
+            <p>Assim que confirmarmos o pagamento, você receberá um e-mail.</p>
+            <button onclick="window.location.reload()" class="btn-primary" style="margin-top: 20px;">Voltar ao Início</button>
         </div>
 
         <!-- Passo 5: Sucesso -->
@@ -161,10 +162,17 @@
         async function generatePix() {
             const name = document.getElementById('name').value.trim();
             const email = document.getElementById('email').value.trim();
+            const whatsapp = document.getElementById('whatsapp').value.trim();
+            const tshirt = document.querySelector('input[name="tshirt"]:checked').value;
             const terms = document.getElementById('terms').checked;
 
             if (!name || !email || !email.includes('@')) {
                 showError('Por favor, preencha nome e e-mail corretamente.');
+                return;
+            }
+
+            if (!whatsapp) {
+                showError('Por favor, preencha seu WhatsApp.');
                 return;
             }
 
@@ -186,7 +194,7 @@
                 const response = await fetch('/api/generate-pix', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email }),
+                    body: JSON.stringify({ name, email, whatsapp, tshirt_size: tshirt }),
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
@@ -265,41 +273,20 @@
 
         function confirmPayment() {
             if (confirm('Confirma que já realizou o pagamento no seu banco?')) {
-                showStep('stepDetails');
-            }
-        }
-
-        async function finalizeRegistration() {
-            const whatsapp = document.getElementById('whatsapp').value;
-            const tshirt = document.querySelector('input[name="tshirt"]:checked').value;
-
-            if (!whatsapp) {
-                showError('Informe seu WhatsApp.');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/complete', {
+                // Chama a API apenas para mudar o status para 'completed'
+                fetch('/api/complete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         email: userData.email,
-                        whatsapp,
-                        tshirt_size: tshirt,
-                        transaction_id: userData.paymentId // Usando ID do 7me como transação
+                        transaction_id: userData.paymentId
                     })
+                }).then(() => {
+                    showStep('stepDetails'); // Mostra mensagem final e botão de voltar
+                }).catch(e => {
+                    console.error(e);
+                    showStep('stepDetails'); // Mostra mesmo com erro, pois o principal já foi
                 });
-
-                const data = await response.json();
-                if (data.success) {
-                    showStep('stepSuccess');
-                } else {
-                    console.error('Erro na API /complete:', data);
-                    showError('Erro ao salvar dados finais: ' + data.error);
-                }
-            } catch (e) {
-                console.error('Erro de conexão /complete:', e);
-                showError('Erro de conexão ao salvar inscrição.');
             }
         }
     </script>
