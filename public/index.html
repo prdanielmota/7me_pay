@@ -99,7 +99,7 @@
 
         <!-- Passo 4: Detalhes Finais -->
         <div id="stepDetails" class="hidden">
-            <h2>Pagamento Confirmado!</h2>
+            <h2>Pagamento Informado</h2>
             <p>Para finalizar sua inscrição, informe:</p>
             <div class="form-group">
                 <label>WhatsApp:</label>
@@ -201,27 +201,27 @@
                     userData.paymentId = data.paymentId;
                     
                     // Exibir PIX
-                document.getElementById('pixCodeText').value = data.pixCode;
-                
-                // Gerar QR Code via API (Mais robusto que biblioteca JS local para strings longas)
-                const qrContainer = document.getElementById('qrcode');
-                qrContainer.innerHTML = ''; // Limpa anterior
-                
-                const img = document.createElement('img');
-                img.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.pixCode)}`;
-                img.alt = "QR Code do PIX";
-                img.style.maxWidth = "100%";
-                img.style.height = "auto";
-                
-                // Adiciona listener para caso falhe
-                img.onerror = function() {
-                    qrContainer.innerHTML = '<p style="color: red; font-size: 0.8em;">Erro ao carregar imagem do QR Code. Use o código abaixo.</p>';
-                };
+                    document.getElementById('pixCodeText').value = data.pixCode;
+                    
+                    // Gerar QR Code via API (Mais robusto que biblioteca JS local para strings longas)
+                    const qrContainer = document.getElementById('qrcode');
+                    qrContainer.innerHTML = ''; // Limpa anterior
+                    
+                    const img = document.createElement('img');
+                    img.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.pixCode)}`;
+                    img.alt = "QR Code do PIX";
+                    img.style.maxWidth = "100%";
+                    img.style.height = "auto";
+                    
+                    // Adiciona listener para caso falhe
+                    img.onerror = function() {
+                        qrContainer.innerHTML = '<p style="color: red; font-size: 0.8em;">Erro ao carregar imagem do QR Code. Use o código abaixo.</p>';
+                    };
 
-                qrContainer.appendChild(img);
-                showStep('stepPix');
+                    qrContainer.appendChild(img);
+                    showStep('stepPix');
 
-            } else {
+                } else {
                 showError(data.error || 'Erro ao gerar PIX. Tente novamente.');
                 showStep('step1');
             }
@@ -294,10 +294,12 @@
                 if (data.success) {
                     showStep('stepSuccess');
                 } else {
+                    console.error('Erro na API /complete:', data);
                     showError('Erro ao salvar dados finais: ' + data.error);
                 }
             } catch (e) {
-                showError('Erro de conexão.');
+                console.error('Erro de conexão /complete:', e);
+                showError('Erro de conexão ao salvar inscrição.');
             }
         }
     </script>
