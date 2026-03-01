@@ -38,8 +38,8 @@ Este projeto é um sistema de inscrição e pagamento para a corrida "Conectados
    ```
 
 4. Acesse no navegador:
-   - Aplicação: `http://localhost:3000`
-   - Dashboard: `http://localhost:3000/dashboard.html`
+   - Aplicação: `http://localhost:3020`
+   - Dashboard: `http://localhost:3020/dashboard.html`
 
 ### Senha do Dashboard
 
@@ -60,7 +60,7 @@ O projeto inclui um `Dockerfile` para facilitar o deploy.
 
 ```bash
 docker build -t 7me-pay .
-docker run -p 3000:3000 7me-pay
+docker run -p 3020:3020 7me-pay
 ```
 
 **Nota:** Ao usar Docker, lembre-se de montar um volume para persistir o banco de dados `registrations.db` se necessário.

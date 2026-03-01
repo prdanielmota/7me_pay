@@ -16,10 +16,10 @@ COPY . .
 
 # Define a variável de ambiente para produção
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=3020
 
 # Expõe a porta que o servidor usa
-EXPOSE 3000
+EXPOSE 3020
 
 # Comando para iniciar o servidor
 CMD ["node", "server.js"]

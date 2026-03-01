@@ -147,7 +147,7 @@ app.post('/api/generate-pix', (req, res) => {
     });
 });
 
-const PORT = 3000;
+const PORT = 3020;
 server.listen(PORT, () => {
     console.log(`Servidor rodando em http://localhost:${PORT}`);
 });
