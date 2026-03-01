@@ -180,6 +180,26 @@ app.post('/api/update-registration', (req, res) => {
     );
 });
 
+// API: Excluir Inscrição (Admin)
+app.post('/api/delete-registration', (req, res) => {
+    // Autenticação simples
+    const auth = req.headers['x-admin-auth'];
+    if (auth !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Senha incorreta' });
+    }
+
+    const { id } = req.body;
+    
+    db.run(
+        `DELETE FROM registrations WHERE id = ?`,
+        [id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        }
+    );
+});
+
 // API: Gerar PIX (Automação)
 app.post('/api/generate-pix', (req, res) => {
     const { name, email } = req.body;

@@ -275,9 +275,12 @@
                 <option value="completed">A Confirmar</option>
                 <option value="verified">Confirmado</option>
             </select>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button onclick="saveEdit()" class="btn-primary">Salvar Alterações</button>
-                <button onclick="closeEditModal()" style="background: #666; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">Cancelar</button>
+            <div style="display: flex; gap: 10px; margin-top: 10px; justify-content: space-between;">
+                <div>
+                    <button onclick="saveEdit()" class="btn-primary">Salvar Alterações</button>
+                    <button onclick="closeEditModal()" style="background: #666; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">Cancelar</button>
+                </div>
+                <button onclick="deleteRegistration()" style="background: #dc3545; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer;">Excluir</button>
             </div>
         </div>
     </div>
@@ -366,7 +369,6 @@
                         statusClass = 'badge-verified';
                         statusText = 'Confirmado';
                         paid++;
-                        // Adiciona botão de editar quando confirmado
                         actions = `<button class="btn-confirm" style="background-color: #007bff;" onclick='openEditModal(${JSON.stringify(reg).replace(/'/g, "&#39;")})'>Editar</button>`;
                     } else if (reg.payment_status === 'completed') {
                         statusClass = 'badge-completed';
@@ -377,8 +379,10 @@
                         statusClass = 'badge-pending-pix';
                         statusText = 'Aguardando PIX';
                         pending++;
+                        actions = `<button class="btn-confirm" style="background-color: #007bff;" onclick='openEditModal(${JSON.stringify(reg).replace(/'/g, "&#39;")})'>Editar</button>`;
                     } else {
                         pending++;
+                        actions = `<button class="btn-confirm" style="background-color: #007bff;" onclick='openEditModal(${JSON.stringify(reg).replace(/'/g, "&#39;")})'>Editar</button>`;
                     }
 
                     // Tratamento de Data seguro
@@ -533,6 +537,37 @@
 
                 if (response.ok) {
                     alert('Alterações salvas!');
+                    closeEditModal();
+                    loadRegistrations();
+                } else {
+                    const data = await response.json();
+                    alert('Erro: ' + data.error);
+                }
+            } catch (e) {
+                alert('Erro de conexão');
+            }
+        }
+
+        async function deleteRegistration() {
+            if (!confirm('ATENÇÃO: Tem certeza que deseja EXCLUIR esta inscrição? Essa ação não pode ser desfeita.')) {
+                return;
+            }
+
+            const id = document.getElementById('eId').value;
+            const token = sessionStorage.getItem(AUTH_KEY);
+
+            try {
+                const response = await fetch('/api/delete-registration', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-admin-auth': token 
+                    },
+                    body: JSON.stringify({ id })
+                });
+
+                if (response.ok) {
+                    alert('Inscrição excluída!');
                     closeEditModal();
                     loadRegistrations();
                 } else {
