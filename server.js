@@ -95,36 +95,61 @@ app.get('/api/export-csv', (req, res) => {
 
     db.all(`SELECT * FROM registrations ORDER BY created_at DESC`, [], (err, rows) => {
         if (err) {
-            return res.status(500).send('Erro ao gerar relatório');
+            console.error('Erro ao consultar banco para CSV:', err);
+            return res.status(500).send('Erro ao consultar banco de dados.');
         }
 
-        // Cabeçalho do CSV
-        let csv = 'ID,Nome,Email,WhatsApp,Nascimento,CPF,Camiseta,Status,Metodo,ID Pagamento,Data Inscricao,Data Confirmacao\n';
+        try {
+            // Cabeçalho do CSV
+            let csv = 'ID,Nome,Email,WhatsApp,Nascimento,CPF,Camiseta,Status,Metodo,ID Pagamento,Data Inscricao,Data Confirmacao\n';
 
-        rows.forEach(row => {
-            // Formatar datas
-            const formatDate = (d) => d ? new Date(d.replace(' ', 'T') + 'Z').toLocaleString('pt-BR') : '';
-            const created = formatDate(row.created_at);
-            const confirmed = formatDate(row.payment_confirmed_at);
-            
-            // Formatar nascimento
-            let birth = row.birthdate || '';
-            if (birth.includes('-')) {
-                const parts = birth.split('-');
-                if (parts.length === 3) birth = `${parts[2]}/${parts[1]}/${parts[0]}`;
-            }
+            rows.forEach(row => {
+                // Função auxiliar segura para escapar valores
+                const escape = (text) => {
+                    if (text === null || text === undefined) return '';
+                    return `"${text.toString().replace(/"/g, '""')}"`;
+                };
 
-            // Escapar aspas e vírgulas para CSV válido
-            const escape = (text) => text ? `"${text.toString().replace(/"/g, '""')}"` : '';
+                // Formatar datas
+                const formatDate = (d) => {
+                    if (!d) return '';
+                    try {
+                        return new Date(d.replace(' ', 'T') + 'Z').toLocaleString('pt-BR');
+                    } catch (e) { return d; }
+                };
+                
+                const created = formatDate(row.created_at);
+                const confirmed = formatDate(row.payment_confirmed_at);
+                
+                // Formatar nascimento com segurança extra
+                let birth = '';
+                if (row.birthdate) {
+                    try {
+                        if (row.birthdate.includes('-')) {
+                            const parts = row.birthdate.split('-');
+                            if (parts.length === 3) birth = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                            else birth = row.birthdate;
+                        } else {
+                            birth = row.birthdate;
+                        }
+                    } catch (e) {
+                        birth = row.birthdate || '';
+                    }
+                }
 
-            csv += `${row.id},${escape(row.name)},${escape(row.email)},${escape(row.whatsapp)},${escape(birth)},${escape(row.cpf)},${escape(row.tshirt_size)},${escape(row.payment_status)},${escape(row.payment_method)},${escape(row.payment_id)},${created},${confirmed}\n`;
-        });
+                csv += `${row.id},${escape(row.name)},${escape(row.email)},${escape(row.whatsapp)},${escape(birth)},${escape(row.cpf)},${escape(row.tshirt_size)},${escape(row.payment_status)},${escape(row.payment_method)},${escape(row.payment_id)},${created},${confirmed}\n`;
+            });
 
-        // Adiciona BOM para o Excel reconhecer UTF-8 (acentos)
-        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-        res.setHeader('Content-Disposition', 'attachment; filename=inscritos_conectados_run.csv');
-        res.write('\uFEFF'); 
-        res.send(csv);
+            // Adiciona BOM para o Excel reconhecer UTF-8 (acentos)
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', 'attachment; filename=inscritos_conectados_run.csv');
+            res.write('\uFEFF'); 
+            res.send(csv);
+
+        } catch (processError) {
+            console.error('Erro ao processar dados do CSV:', processError);
+            res.status(500).send('Erro ao processar dados para o relatório.');
+        }
     });
 });
 
