@@ -393,13 +393,16 @@
                         actions = `<button class="btn-confirm" style="background-color: #007bff;" onclick='openEditModal(${JSON.stringify(reg).replace(/'/g, "&#39;")})'>Editar</button>`;
                     }
 
-                    // Tratamento de Data seguro
+                    // Tratamento de Data seguro (dd/mm/aaaa HH:mm:ss)
                     const formatDate = (dateStr) => {
                         if (!dateStr) return '-';
                         try {
                             const dateObj = new Date(dateStr.replace(' ', 'T') + 'Z');
                             if (!isNaN(dateObj)) {
-                                return dateObj.toLocaleString('pt-BR');
+                                return dateObj.toLocaleString('pt-BR', { 
+                                    day: '2-digit', month: '2-digit', year: 'numeric',
+                                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+                                });
                             }
                         } catch (e) {
                             console.warn('Erro ao formatar data:', dateStr);
@@ -410,11 +413,19 @@
                     const createdDate = formatDate(reg.created_at);
                     const confirmedDate = formatDate(reg.payment_confirmed_at);
                     
-                    // Formatar data nascimento (YYYY-MM-DD -> DD/MM/YYYY)
+                    // Formatar data nascimento (YYYY-MM-DD -> DD/MM/AAAA)
                     let birthDateDisplay = reg.birthdate || '-';
                     if (reg.birthdate) {
                          const parts = reg.birthdate.split('-');
-                         if (parts.length === 3) birthDateDisplay = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                         if (parts.length === 3) {
+                             birthDateDisplay = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                         } else {
+                             // Fallback se vier como string completa (pouco provável no input date, mas seguro)
+                             const dateObj = new Date(reg.birthdate);
+                             if (!isNaN(dateObj)) {
+                                 birthDateDisplay = dateObj.toLocaleDateString('pt-BR');
+                             }
+                         }
                     }
 
                     const tr = document.createElement('tr');
