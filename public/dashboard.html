@@ -186,6 +186,7 @@
         <div class="header">
             <h1>Dashboard Inscritos</h1>
             <div class="header-actions">
+                <button onclick="downloadExcel()" class="btn-primary" style="width: auto; margin: 0; padding: 10px 20px; font-size: 0.9em; background-color: #17a2b8; border: none;">📥 Excel</button>
                 <button onclick="openManualModal()" class="btn-primary" style="width: auto; margin: 0; padding: 10px 20px; font-size: 0.9em;">+ Manual</button>
                 <a href="/" class="btn-primary" style="width: auto; margin: 0; padding: 10px 20px; font-size: 0.9em;">Nova Inscrição</a>
             </div>
@@ -453,6 +454,16 @@
                 console.error('Erro ao carregar:', error);
                 // Não sobrescreve se já tiver dados, apenas loga erro ou mostra toast
             }
+        }
+
+        function downloadExcel() {
+            const token = sessionStorage.getItem(AUTH_KEY);
+            if (!token) {
+                alert('Faça login novamente');
+                return;
+            }
+            // Abre o download em nova aba, passando o token na URL (seguro o suficiente para admin simples)
+            window.location.href = `/api/export-csv?auth=${encodeURIComponent(token)}`;
         }
 
         async function verifyPayment(id) {

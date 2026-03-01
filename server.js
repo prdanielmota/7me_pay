@@ -85,6 +85,49 @@ app.get('/api/registrations', (req, res) => {
     });
 });
 
+// API: Exportar CSV (Excel)
+app.get('/api/export-csv', (req, res) => {
+    // Autenticação via query param (para link direto)
+    const auth = req.query.auth;
+    if (auth !== ADMIN_PASSWORD) {
+        return res.status(401).send('Acesso negado');
+    }
+
+    db.all(`SELECT * FROM registrations ORDER BY created_at DESC`, [], (err, rows) => {
+        if (err) {
+            return res.status(500).send('Erro ao gerar relatório');
+        }
+
+        // Cabeçalho do CSV
+        let csv = 'ID,Nome,Email,WhatsApp,Nascimento,CPF,Camiseta,Status,Metodo,ID Pagamento,Data Inscricao,Data Confirmacao\n';
+
+        rows.forEach(row => {
+            // Formatar datas
+            const formatDate = (d) => d ? new Date(d.replace(' ', 'T') + 'Z').toLocaleString('pt-BR') : '';
+            const created = formatDate(row.created_at);
+            const confirmed = formatDate(row.payment_confirmed_at);
+            
+            // Formatar nascimento
+            let birth = row.birthdate || '';
+            if (birth.includes('-')) {
+                const parts = birth.split('-');
+                if (parts.length === 3) birth = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+
+            // Escapar aspas e vírgulas para CSV válido
+            const escape = (text) => text ? `"${text.toString().replace(/"/g, '""')}"` : '';
+
+            csv += `${row.id},${escape(row.name)},${escape(row.email)},${escape(row.whatsapp)},${escape(birth)},${escape(row.cpf)},${escape(row.tshirt_size)},${escape(row.payment_status)},${escape(row.payment_method)},${escape(row.payment_id)},${created},${confirmed}\n`;
+        });
+
+        // Adiciona BOM para o Excel reconhecer UTF-8 (acentos)
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename=inscritos_conectados_run.csv');
+        res.write('\uFEFF'); 
+        res.send(csv);
+    });
+});
+
 // API: Login Check
 app.post('/api/login', (req, res) => {
     const { password } = req.body;
