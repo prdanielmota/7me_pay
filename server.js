@@ -192,10 +192,11 @@ app.post('/api/delete-registration', (req, res) => {
 app.post('/api/generate-pix', (req, res) => {
     const { name, email, whatsapp, birthdate, cpf, tshirt_size } = req.body;
     if (!name || !email || !whatsapp || !tshirt_size || !birthdate || !cpf) {
+        console.log('Faltando dados:', { name, email, whatsapp, tshirt_size, birthdate, cpf }); // Debug
         return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
     }
 
-    console.log(`Iniciando geração de PIX para: ${name} (${email})`);
+    console.log(`Iniciando geração de PIX para: ${name} (${email}), T-Shirt: ${tshirt_size}`);
 
     // Executa o script de automação como um processo filho
     const child = spawn('node', ['services/generate_pix.js', name, email]);
