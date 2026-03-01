@@ -19,8 +19,8 @@ RUN npx playwright install chromium
 # Copia o restante do código fonte
 COPY . .
 
-# Garante permissões para o banco de dados
-RUN touch registrations.db && chmod 777 registrations.db
+# Garante permissões para o diretório de dados
+RUN mkdir -p /app/data && chmod 777 /app/data
 
 # Define a variável de ambiente para produção
 ENV NODE_ENV=production
