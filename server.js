@@ -155,6 +155,31 @@ app.post('/api/manual-register', (req, res) => {
     );
 });
 
+// API: Atualizar Inscrição (Admin - Edição)
+app.post('/api/update-registration', (req, res) => {
+    // Autenticação simples
+    const auth = req.headers['x-admin-auth'];
+    if (auth !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Senha incorreta' });
+    }
+
+    const { id, name, email, whatsapp, tshirt_size, payment_status } = req.body;
+    
+    db.run(
+        `UPDATE registrations SET name = ?, email = ?, whatsapp = ?, tshirt_size = ?, payment_status = ? WHERE id = ?`,
+        [name, email, whatsapp, tshirt_size, payment_status, id],
+        function(err) {
+            if (err) {
+                if (err.message.includes('UNIQUE constraint failed')) {
+                    return res.status(400).json({ error: 'Email já cadastrado em outra inscrição.' });
+                }
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ success: true });
+        }
+    );
+});
+
 // API: Gerar PIX (Automação)
 app.post('/api/generate-pix', (req, res) => {
     const { name, email } = req.body;
