@@ -85,72 +85,62 @@ app.get('/api/registrations', (req, res) => {
     });
 });
 
-// API: Exportar CSV (Excel)
+// API: Exportar CSV (Excel) - Versão Simplificada e Segura
 app.get('/api/export-csv', (req, res) => {
-    // Autenticação via query param (para link direto)
-    const auth = req.query.auth;
-    if (auth !== ADMIN_PASSWORD) {
-        return res.status(401).send('Acesso negado');
-    }
-
-    db.all(`SELECT * FROM registrations ORDER BY created_at DESC`, [], (err, rows) => {
-        if (err) {
-            console.error('Erro ao consultar banco para CSV:', err);
-            return res.status(500).send('Erro ao consultar banco de dados.');
+    try {
+        const auth = req.query.auth;
+        if (auth !== ADMIN_PASSWORD) {
+            return res.status(401).send('Acesso negado');
         }
 
-        try {
-            // Cabeçalho do CSV
-            let csv = 'ID,Nome,Email,WhatsApp,Nascimento,CPF,Camiseta,Status,Metodo,ID Pagamento,Data Inscricao,Data Confirmacao\n';
+        db.all(`SELECT * FROM registrations ORDER BY created_at DESC`, [], (err, rows) => {
+            if (err) {
+                console.error('Erro DB:', err);
+                return res.status(500).send('Erro no banco de dados: ' + err.message);
+            }
 
-            rows.forEach(row => {
-                // Função auxiliar segura para escapar valores
-                const escape = (text) => {
-                    if (text === null || text === undefined) return '';
-                    return `"${text.toString().replace(/"/g, '""')}"`;
-                };
+            try {
+                // Cabeçalho simples
+                let csv = 'ID;Nome;Email;WhatsApp;Nascimento;CPF;Camiseta;Status;Metodo;ID_Pagamento;Data_Inscricao;Data_Confirmacao\n';
 
-                // Formatar datas
-                const formatDate = (d) => {
-                    if (!d) return '';
-                    try {
-                        return new Date(d.replace(' ', 'T') + 'Z').toLocaleString('pt-BR');
-                    } catch (e) { return d; }
-                };
-                
-                const created = formatDate(row.created_at);
-                const confirmed = formatDate(row.payment_confirmed_at);
-                
-                // Formatar nascimento com segurança extra
-                let birth = '';
-                if (row.birthdate) {
-                    try {
-                        if (row.birthdate.includes('-')) {
-                            const parts = row.birthdate.split('-');
-                            if (parts.length === 3) birth = `${parts[2]}/${parts[1]}/${parts[0]}`;
-                            else birth = row.birthdate;
-                        } else {
-                            birth = row.birthdate;
-                        }
-                    } catch (e) {
-                        birth = row.birthdate || '';
-                    }
+                for (const row of rows) {
+                    // Função auxiliar MUITO segura
+                    const safe = (val) => {
+                        if (val === null || val === undefined) return '';
+                        // Remove quebras de linha e ponto e vírgula para não quebrar o CSV
+                        return String(val).replace(/[\n\r;]/g, ' ').trim();
+                    };
+
+                    csv += [
+                        safe(row.id),
+                        safe(row.name),
+                        safe(row.email),
+                        safe(row.whatsapp),
+                        safe(row.birthdate),
+                        safe(row.cpf),
+                        safe(row.tshirt_size),
+                        safe(row.payment_status),
+                        safe(row.payment_method),
+                        safe(row.payment_id),
+                        safe(row.created_at),
+                        safe(row.payment_confirmed_at)
+                    ].join(';') + '\n';
                 }
 
-                csv += `${row.id},${escape(row.name)},${escape(row.email)},${escape(row.whatsapp)},${escape(birth)},${escape(row.cpf)},${escape(row.tshirt_size)},${escape(row.payment_status)},${escape(row.payment_method)},${escape(row.payment_id)},${created},${confirmed}\n`;
-            });
+                res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+                res.setHeader('Content-Disposition', 'attachment; filename=inscritos.csv');
+                res.write('\uFEFF'); // BOM para Excel
+                res.send(csv);
 
-            // Adiciona BOM para o Excel reconhecer UTF-8 (acentos)
-            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-            res.setHeader('Content-Disposition', 'attachment; filename=inscritos_conectados_run.csv');
-            res.write('\uFEFF'); 
-            res.send(csv);
-
-        } catch (processError) {
-            console.error('Erro ao processar dados do CSV:', processError);
-            res.status(500).send('Erro ao processar dados para o relatório.');
-        }
-    });
+            } catch (innerErr) {
+                console.error('Erro ao montar CSV:', innerErr);
+                res.status(500).send('Erro ao montar arquivo CSV: ' + innerErr.message);
+            }
+        });
+    } catch (e) {
+        console.error('Erro fatal na rota CSV:', e);
+        res.status(500).send('Erro interno no servidor.');
+    }
 });
 
 // API: Login Check
