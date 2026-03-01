@@ -30,6 +30,8 @@ db.serialize(() => {
         pix_code TEXT,
         payment_id TEXT,
         whatsapp TEXT,
+        birthdate TEXT,
+        cpf TEXT,
         tshirt_size TEXT,
         payment_confirmed_at DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP

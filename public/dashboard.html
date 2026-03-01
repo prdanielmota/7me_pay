@@ -213,6 +213,8 @@
                         <th>Nome</th>
                         <th>E-mail</th>
                         <th>WhatsApp</th>
+                        <th>Nascimento</th>
+                        <th>CPF</th>
                         <th>Camiseta</th>
                         <th>Status</th>
                         <th>Ações</th>
@@ -223,7 +225,7 @@
                 </thead>
                 <tbody id="registrationsTable">
                     <tr>
-                        <td colspan="9" style="text-align: center;">Carregando dados...</td>
+                        <td colspan="11" style="text-align: center;">Carregando dados...</td>
                     </tr>
                 </tbody>
             </table>
@@ -237,6 +239,8 @@
             <input type="text" id="mName" placeholder="Nome Completo">
             <input type="email" id="mEmail" placeholder="E-mail">
             <input type="text" id="mWhatsapp" placeholder="WhatsApp">
+            <input type="date" id="mBirthdate" placeholder="Data de Nascimento">
+            <input type="text" id="mCpf" placeholder="CPF">
             <select id="mTshirt">
                 <option value="P">Camiseta P</option>
                 <option value="M" selected>Camiseta M</option>
@@ -261,6 +265,10 @@
             <input type="email" id="eEmail" placeholder="E-mail">
             <label>WhatsApp:</label>
             <input type="text" id="eWhatsapp" placeholder="WhatsApp">
+            <label>Nascimento:</label>
+            <input type="date" id="eBirthdate">
+            <label>CPF:</label>
+            <input type="text" id="eCpf" placeholder="CPF">
             <label>Camiseta:</label>
             <select id="eTshirt">
                 <option value="P">P</option>
@@ -401,12 +409,21 @@
 
                     const createdDate = formatDate(reg.created_at);
                     const confirmedDate = formatDate(reg.payment_confirmed_at);
+                    
+                    // Formatar data nascimento (YYYY-MM-DD -> DD/MM/YYYY)
+                    let birthDateDisplay = reg.birthdate || '-';
+                    if (reg.birthdate) {
+                         const parts = reg.birthdate.split('-');
+                         if (parts.length === 3) birthDateDisplay = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                    }
 
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>${reg.name}</td>
                         <td>${reg.email}</td>
                         <td>${reg.whatsapp || '-'}</td>
+                        <td>${birthDateDisplay}</td>
+                        <td>${reg.cpf || '-'}</td>
                         <td>${reg.tshirt_size || '-'}</td>
                         <td><span class="badge ${statusClass}">${statusText}</span></td>
                         <td>${actions}</td>
@@ -462,6 +479,8 @@
             const name = document.getElementById('mName').value;
             const email = document.getElementById('mEmail').value;
             const whatsapp = document.getElementById('mWhatsapp').value;
+            const birthdate = document.getElementById('mBirthdate').value;
+            const cpf = document.getElementById('mCpf').value;
             const tshirt = document.getElementById('mTshirt').value;
 
             if (!name || !email) {
@@ -478,7 +497,7 @@
                         'x-admin-auth': token 
                     },
                     body: JSON.stringify({
-                        name, email, whatsapp, tshirt_size: tshirt,
+                        name, email, whatsapp, birthdate, cpf, tshirt_size: tshirt,
                         payment_status: 'verified' // Manual já entra como confirmado
                     })
                 });
@@ -491,6 +510,8 @@
                     document.getElementById('mName').value = '';
                     document.getElementById('mEmail').value = '';
                     document.getElementById('mWhatsapp').value = '';
+                    document.getElementById('mBirthdate').value = '';
+                    document.getElementById('mCpf').value = '';
                 } else {
                     const data = await response.json();
                     alert('Erro: ' + data.error);
@@ -505,6 +526,8 @@
             document.getElementById('eName').value = reg.name;
             document.getElementById('eEmail').value = reg.email;
             document.getElementById('eWhatsapp').value = reg.whatsapp || '';
+            document.getElementById('eBirthdate').value = reg.birthdate || '';
+            document.getElementById('eCpf').value = reg.cpf || '';
             document.getElementById('eTshirt').value = reg.tshirt_size || 'M';
             document.getElementById('eStatus').value = reg.payment_status;
             document.getElementById('editModal').style.display = 'flex';
@@ -519,6 +542,8 @@
             const name = document.getElementById('eName').value;
             const email = document.getElementById('eEmail').value;
             const whatsapp = document.getElementById('eWhatsapp').value;
+            const birthdate = document.getElementById('eBirthdate').value;
+            const cpf = document.getElementById('eCpf').value;
             const tshirt = document.getElementById('eTshirt').value;
             const status = document.getElementById('eStatus').value;
 
@@ -531,7 +556,7 @@
                         'x-admin-auth': token 
                     },
                     body: JSON.stringify({
-                        id, name, email, whatsapp, tshirt_size: tshirt, payment_status: status
+                        id, name, email, whatsapp, birthdate, cpf, tshirt_size: tshirt, payment_status: status
                     })
                 });
 
