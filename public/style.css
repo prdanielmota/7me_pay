@@ -1,0 +1,326 @@
+/* Estilo Conectados Run */
+:root {
+    --primary-color: #000000;
+    --secondary-color: #1a1a1a;
+    --accent-color: #ffcc00; /* Amarelo Vibrante */
+    --accent-color-hover: #e6b800;
+    --text-color: #ffffff;
+    --text-muted: #cccccc;
+    --success-color: #28a745;
+    --error-color: #dc3545;
+}
+
+body {
+    font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    width: 100%;
+    max-width: 500px;
+    background: var(--secondary-color);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(255, 204, 0, 0.2); /* Brilho Amarelo */
+    margin: 20px;
+}
+
+h1 {
+    color: var(--accent-color);
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: 800;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+}
+
+h2 {
+    color: var(--text-color);
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+p {
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--accent-color);
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+select,
+textarea {
+    width: 100%;
+    padding: 12px;
+    background-color: #333;
+    border: 1px solid #444;
+    border-radius: 6px;
+    box-sizing: border-box;
+    color: #fff;
+    font-size: 16px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
+}
+
+/* Radio Group Estilizado */
+.radio-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.radio-option {
+    flex: 1;
+    position: relative;
+}
+
+.radio-option input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.radio-option label {
+    display: block;
+    padding: 15px;
+    background: #333;
+    border: 2px solid #444;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    color: #fff;
+    margin: 0;
+}
+
+.radio-option input:checked + label {
+    border-color: var(--accent-color);
+    background: rgba(255, 204, 0, 0.1);
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+input[type="checkbox"] {
+    accent-color: var(--accent-color);
+    cursor: pointer;
+}
+
+button {
+    background-color: var(--accent-color);
+    color: #000;
+    padding: 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 16px;
+    font-weight: 800;
+    text-transform: uppercase;
+    transition: transform 0.2s, background-color 0.2s;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: var(--accent-color-hover);
+    transform: translateY(-2px);
+}
+
+button:disabled {
+    background-color: #666;
+    color: #999;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Novos Estilos para UX */
+.info-box {
+    background: #333;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid var(--accent-color);
+    margin-bottom: 20px;
+}
+
+.copy-helpers {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.copy-helpers button {
+    background: #444;
+    color: #fff;
+    font-size: 0.8em;
+    padding: 8px;
+    margin-top: 0;
+    border: 1px solid #555;
+}
+
+.copy-helpers button:hover {
+    background: #555;
+    border-color: var(--accent-color);
+}
+
+.btn-primary {
+    display: block;
+    background-color: var(--accent-color);
+    color: #000;
+    text-align: center;
+    padding: 15px;
+    border-radius: 6px;
+    font-weight: 800;
+    text-decoration: none;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    transition: transform 0.2s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    background-color: var(--accent-color-hover);
+    text-decoration: none;
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+/* Toast Notification */
+#toast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 4px;
+    padding: 16px;
+    position: fixed;
+    z-index: 1;
+    left: 50%;
+    bottom: 30px;
+    transform: translateX(-50%);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    border: 1px solid var(--accent-color);
+}
+
+#toast.show {
+    visibility: visible;
+    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@-webkit-keyframes fadein {
+    from {bottom: 0; opacity: 0;} 
+    to {bottom: 30px; opacity: 1;}
+}
+
+@keyframes fadein {
+    from {bottom: 0; opacity: 0;}
+    to {bottom: 30px; opacity: 1;}
+}
+
+@-webkit-keyframes fadeout {
+    from {bottom: 30px; opacity: 1;} 
+    to {bottom: 0; opacity: 0;}
+}
+
+@keyframes fadeout {
+    from {bottom: 30px; opacity: 1;}
+    to {bottom: 0; opacity: 0;}
+}
+
+/* Utils */
+.hidden {
+    display: none;
+}
+
+.error {
+    color: var(--error-color);
+    background: rgba(220, 53, 69, 0.1);
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid var(--error-color);
+    margin-top: 15px;
+    font-size: 0.9em;
+}
+
+.success {
+    color: var(--success-color);
+    background: rgba(40, 167, 69, 0.1);
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid var(--success-color);
+    margin-top: 15px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    color: #fff;
+}
+
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid #444;
+    text-align: left;
+}
+
+th {
+    background-color: #333;
+    color: var(--accent-color);
+    text-transform: uppercase;
+    font-size: 0.85em;
+}
+
+tr:hover {
+    background-color: #2a2a2a;
+}
+
+a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Spinner */
+#loading {
+    color: var(--accent-color);
+    font-weight: bold;
+    text-align: center;
+    margin-top: 15px;
+}

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completar Cadastro</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Quase lá!</h1>
+        <p>Informe seus dados adicionais para completar a inscrição.</p>
+        
+        <form id="completionForm">
+            <div class="form-group">
+                <label for="email">Email (confirmação):</label>
+                <input type="email" id="email" name="email" required readonly>
+            </div>
+            
+            <div class="form-group">
+                <label for="whatsapp">WhatsApp:</label>
+                <input type="tel" id="whatsapp" name="whatsapp" placeholder="(XX) XXXXX-XXXX" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="tshirtSize">Tamanho da Camiseta:</label>
+                <select id="tshirtSize" name="tshirtSize" required>
+                    <option value="">Selecione...</option>
+                    <option value="P">P</option>
+                    <option value="M">M</option>
+                    <option value="G">G</option>
+                    <option value="GG">GG</option>
+                </select>
+            </div>
+            
+            <button type="submit" id="completeBtn">Finalizar Inscrição</button>
+        </form>
+        
+        <div id="successArea" class="hidden success">
+            <h2>Sucesso!</h2>
+            <p>Sua inscrição foi confirmada.</p>
+            <a href="dashboard.html">Ver Dashboard</a>
+        </div>
+        
+        <div id="errorArea" class="hidden error"></div>
+    </div>
+
+    <script>
+        const emailInput = document.getElementById('email');
+        const storedEmail = localStorage.getItem('userEmail');
+        
+        if (storedEmail) {
+            emailInput.value = storedEmail;
+        } else {
+            // Se não tiver email no storage, pede para digitar ou redireciona
+            emailInput.removeAttribute('readonly');
+        }
+        
+        const form = document.getElementById('completionForm');
+        const successArea = document.getElementById('successArea');
+        const errorArea = document.getElementById('errorArea');
+        const completeBtn = document.getElementById('completeBtn');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = emailInput.value;
+            const whatsapp = document.getElementById('whatsapp').value;
+            const tshirtSize = document.getElementById('tshirtSize').value;
+            
+            completeBtn.disabled = true;
+            errorArea.classList.add('hidden');
+            
+            try {
+                const response = await fetch('/api/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, whatsapp, tshirtSize })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    form.classList.add('hidden');
+                    successArea.classList.remove('hidden');
+                } else {
+                    throw new Error(data.error || 'Erro ao salvar dados.');
+                }
+            } catch (err) {
+                errorArea.textContent = err.message;
+                errorArea.classList.remove('hidden');
+                completeBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

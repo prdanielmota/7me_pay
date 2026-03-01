@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Conectados Run</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .container {
+            max-width: 1000px; /* Largura maior para a tabela */
+        }
+        /* Login Overlay */
+        #loginOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #loginOverlay.hidden {
+            display: none !important;
+        }
+        .login-box {
+            background: #333;
+            padding: 40px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid var(--accent-color);
+        }
+        .login-box input {
+            margin-bottom: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .badge {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-pending {
+            background-color: #ffc107;
+            color: #000;
+        }
+        .badge-pending-pix {
+            background-color: #17a2b8;
+            color: #fff;
+        }
+        .badge-completed {
+            background-color: #28a745;
+            color: #fff;
+        }
+        .summary-cards {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            flex: 1;
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border-bottom: 4px solid var(--accent-color);
+        }
+        .card h3 {
+            margin: 0;
+            font-size: 2em;
+            color: #fff;
+        }
+        .card p {
+            margin: 5px 0 0;
+            text-transform: uppercase;
+            font-size: 0.8em;
+        }
+        @media (max-width: 768px) {
+            .summary-cards {
+                flex-direction: column;
+            }
+            table {
+                font-size: 0.8em;
+            }
+            th, td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Overlay -->
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2>Acesso Restrito</h2>
+            <p>Digite a senha para acessar o dashboard:</p>
+            <input type="password" id="adminPassword" placeholder="Senha" onkeypress="if(event.key==='Enter') doLogin()">
+            <button onclick="doLogin()" class="btn-primary">Entrar</button>
+            <p id="loginError" class="error hidden"></p>
+        </div>
+    </div>
+
+    <div class="container hidden" id="mainContent">
+        <div class="header">
+            <h1>Dashboard Inscritos</h1>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="loadRegistrations()" class="btn-primary" style="width: auto; margin: 0; padding: 10px 20px; font-size: 0.9em;">↻ Atualizar</button>
+                <a href="/" class="btn-primary" style="width: auto; margin: 0; padding: 10px 20px; font-size: 0.9em;">Nova Inscrição</a>
+            </div>
+        </div>
+
+        <div class="summary-cards">
+            <div class="card">
+                <h3 id="totalCount">0</h3>
+                <p>Total de Inscritos</p>
+            </div>
+            <div class="card">
+                <h3 id="paidCount" style="color: var(--success-color);">0</h3>
+                <p>Pagamentos Confirmados</p>
+            </div>
+            <div class="card">
+                <h3 id="pendingCount" style="color: #ffc107;">0</h3>
+                <p>Pendentes</p>
+            </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>E-mail</th>
+                        <th>WhatsApp</th>
+                        <th>Camiseta</th>
+                        <th>Status Pagamento</th>
+                        <th>ID Pagamento</th>
+                        <th>Inscrição (Início)</th>
+                        <th>Confirmação Pagamento</th>
+                    </tr>
+                </thead>
+                <tbody id="registrationsTable">
+                    <tr>
+                        <td colspan="7" style="text-align: center;">Carregando dados...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const AUTH_KEY = '7me_admin_token';
+
+        async function doLogin() {
+            const pwd = document.getElementById('adminPassword').value;
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ password: pwd })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    sessionStorage.setItem(AUTH_KEY, pwd);
+                    document.getElementById('loginOverlay').classList.add('hidden');
+                    document.getElementById('mainContent').classList.remove('hidden');
+                    loadRegistrations();
+                    // Start interval
+                    setInterval(loadRegistrations, 30000);
+                } else {
+                    const err = document.getElementById('loginError');
+                    err.textContent = 'Senha Incorreta';
+                    err.classList.remove('hidden');
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadRegistrations() {
+            const token = sessionStorage.getItem(AUTH_KEY);
+            if (!token) {
+                // Logout if no token
+                document.getElementById('loginOverlay').classList.remove('hidden');
+                document.getElementById('mainContent').classList.add('hidden');
+                return;
+            }
+
+            console.log('Atualizando dashboard...');
+            const tbody = document.getElementById('registrationsTable');
+            // tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Atualizando...</td></tr>'; // Opcional: Feedback visual rápido
+
+            try {
+                const response = await fetch('/api/registrations?t=' + new Date().getTime(), {
+                    headers: { 'x-admin-auth': token }
+                }); 
+                
+                if (response.status === 401) {
+                    sessionStorage.removeItem(AUTH_KEY);
+                    document.getElementById('loginOverlay').classList.remove('hidden');
+                    document.getElementById('mainContent').classList.add('hidden');
+                    return;
+                }
+
+                if (!response.ok) throw new Error('Erro na API');
+                
+                const data = await response.json();
+                console.log('Dados recebidos:', data);
+                
+                tbody.innerHTML = '';
+
+                let total = 0;
+                let paid = 0;
+                let pending = 0;
+
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Nenhuma inscrição encontrada.</td></tr>';
+                    document.getElementById('totalCount').textContent = 0;
+                    document.getElementById('paidCount').textContent = 0;
+                    document.getElementById('pendingCount').textContent = 0;
+                    return;
+                }
+
+                data.forEach(reg => {
+                    total++;
+                    let statusClass = 'badge-pending';
+                    let statusText = 'Pendente';
+
+                    if (reg.payment_status === 'completed') {
+                        statusClass = 'badge-completed';
+                        statusText = 'Pago';
+                        paid++;
+                    } else if (reg.payment_status === 'pending_pix') {
+                        statusClass = 'badge-pending-pix';
+                        statusText = 'Aguardando PIX';
+                        pending++;
+                    } else {
+                        pending++;
+                    }
+
+                    // Tratamento de Data seguro
+                    const formatDate = (dateStr) => {
+                        if (!dateStr) return '-';
+                        try {
+                            const dateObj = new Date(dateStr.replace(' ', 'T') + 'Z');
+                            if (!isNaN(dateObj)) {
+                                return dateObj.toLocaleString('pt-BR');
+                            }
+                        } catch (e) {
+                            console.warn('Erro ao formatar data:', dateStr);
+                        }
+                        return dateStr;
+                    };
+
+                    const createdDate = formatDate(reg.created_at);
+                    const confirmedDate = formatDate(reg.payment_confirmed_at);
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${reg.name}</td>
+                        <td>${reg.email}</td>
+                        <td>${reg.whatsapp || '-'}</td>
+                        <td>${reg.tshirt_size || '-'}</td>
+                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                        <td><small>${reg.payment_id || '-'}</small></td>
+                        <td>${createdDate}</td>
+                        <td>${confirmedDate}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.getElementById('totalCount').textContent = total;
+                document.getElementById('paidCount').textContent = paid;
+                document.getElementById('pendingCount').textContent = pending;
+
+            } catch (error) {
+                console.error('Erro ao carregar:', error);
+                // Não sobrescreve se já tiver dados, apenas loga erro ou mostra toast
+            }
+        }
+
+        // Check login on load
+        if (sessionStorage.getItem(AUTH_KEY)) {
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+            loadRegistrations();
+            setInterval(loadRegistrations, 30000);
+        } else {
+            // Show login
+            document.getElementById('loginOverlay').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

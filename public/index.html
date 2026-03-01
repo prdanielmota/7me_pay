@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscrição - Conectados Run</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .pix-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .pix-code-box {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9em;
+            word-break: break-all;
+            resize: none;
+            height: 80px;
+        }
+        #qrcode {
+            margin: 20px auto;
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Conectados Run 2026</h1>
+        
+        <!-- Passo 1: Dados Iniciais -->
+        <div id="step1">
+            <p>Preencha seus dados para gerar o pagamento:</p>
+            <div class="form-group">
+                <label>Nome Completo:</label>
+                <input type="text" id="name" placeholder="Seu Nome" required>
+            </div>
+            <div class="form-group">
+                <label>E-mail:</label>
+                <input type="email" id="email" placeholder="seu@email.com" required>
+            </div>
+            
+            <div class="form-group checkbox-group" style="display: flex; align-items: flex-start; gap: 10px; margin-top: 20px;">
+                <input type="checkbox" id="terms" required style="width: 20px; height: 20px; margin-top: 2px;">
+                <label for="terms" style="text-transform: none; font-size: 0.9em; font-weight: normal; color: #fff; cursor: pointer;">
+                    Estou de acordo com o <a href="https://comunidadeser.com/conectadosrun/" target="_blank" style="text-decoration: underline; color: var(--accent-color);">Regulamento oficial – Conectados Run 2026</a>
+                </label>
+            </div>
+
+            <button onclick="generatePix()" class="btn-primary">Gerar PIX para Pagamento</button>
+        </div>
+
+        <!-- Passo 2: Carregando -->
+        <div id="stepLoading" class="hidden" style="text-align: center;">
+            <div class="loading-spinner"></div>
+            <p>Conectando ao sistema de pagamento...</p>
+            <p style="font-size: 0.8em; color: #666;">Isso pode levar até 30 segundos.</p>
+        </div>
+
+        <!-- Passo 3: Exibição do PIX -->
+        <div id="stepPix" class="hidden">
+            <h2>Pagamento PIX</h2>
+            <p>Escaneie o QR Code ou copie o código abaixo:</p>
+            
+            <div class="pix-container">
+                <div id="qrcode"></div>
+                <p style="margin-top: 10px; font-weight: bold;">PIX Copia e Cola:</p>
+                <textarea id="pixCodeText" class="pix-code-box" readonly></textarea>
+                <button onclick="copyPix()" class="btn-secondary">Copiar Código PIX</button>
+            </div>
+
+            <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                <p>Após realizar o pagamento no seu banco:</p>
+                <button onclick="confirmPayment()" class="btn-success">JÁ REALIZEI O PAGAMENTO</button>
+            </div>
+        </div>
+
+        <!-- Passo 4: Detalhes Finais -->
+        <div id="stepDetails" class="hidden">
+            <h2>Pagamento Confirmado!</h2>
+            <p>Para finalizar sua inscrição, informe:</p>
+            <div class="form-group">
+                <label>WhatsApp:</label>
+                <input type="tel" id="whatsapp" placeholder="(00) 00000-0000" required>
+            </div>
+            <div class="form-group">
+                <label>Tamanho da Camiseta:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="tshirt" value="P"> P</label>
+                    <label><input type="radio" name="tshirt" value="M" checked> M</label>
+                    <label><input type="radio" name="tshirt" value="G"> G</label>
+                    <label><input type="radio" name="tshirt" value="GG"> GG</label>
+                </div>
+            </div>
+            <button onclick="finalizeRegistration()" class="btn-primary">Concluir Inscrição</button>
+        </div>
+
+        <!-- Passo 5: Sucesso -->
+        <div id="stepSuccess" class="hidden" style="text-align: center;">
+            <div style="font-size: 50px; color: green;">✓</div>
+            <h2>Inscrição Realizada com Sucesso!</h2>
+            <p>Obrigado por participar.</p>
+            <p>Você receberá um e-mail com a confirmação em breve.</p>
+        </div>
+
+        <p id="errorMsg" class="error hidden"></p>
+        <div id="toast">Copiado!</div>
+    </div>
+
+    <script>
+        let userData = {
+            name: '',
+            email: '',
+            paymentId: ''
+        };
+
+        const toast = document.getElementById("toast");
+
+        function showStep(stepId) {
+            ['step1', 'stepLoading', 'stepPix', 'stepDetails', 'stepSuccess'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(stepId).classList.remove('hidden');
+            document.getElementById('errorMsg').classList.add('hidden');
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('errorMsg');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        async function generatePix() {
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const terms = document.getElementById('terms').checked;
+
+            if (!name || !email || !email.includes('@')) {
+                showError('Por favor, preencha nome e e-mail corretamente.');
+                return;
+            }
+
+            if (!terms) {
+                showError('Você precisa aceitar o regulamento para continuar.');
+                return;
+            }
+
+            userData.name = name;
+            userData.email = email;
+
+            showStep('stepLoading');
+
+            // Setup a timeout for the fetch
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 seconds timeout
+
+            try {
+                const response = await fetch('/api/generate-pix', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (!response.ok) {
+                    throw new Error(`Erro no servidor: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.pixCode) {
+                    userData.paymentId = data.paymentId;
+                    
+                    // Exibir PIX
+                document.getElementById('pixCodeText').value = data.pixCode;
+                
+                // Gerar QR Code via API (Mais robusto que biblioteca JS local para strings longas)
+                const qrContainer = document.getElementById('qrcode');
+                qrContainer.innerHTML = ''; // Limpa anterior
+                
+                const img = document.createElement('img');
+                img.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(data.pixCode)}`;
+                img.alt = "QR Code do PIX";
+                img.style.maxWidth = "100%";
+                img.style.height = "auto";
+                
+                // Adiciona listener para caso falhe
+                img.onerror = function() {
+                    qrContainer.innerHTML = '<p style="color: red; font-size: 0.8em;">Erro ao carregar imagem do QR Code. Use o código abaixo.</p>';
+                };
+
+                qrContainer.appendChild(img);
+                showStep('stepPix');
+
+            } else {
+                showError(data.error || 'Erro ao gerar PIX. Tente novamente.');
+                showStep('step1');
+            }
+            } catch (error) {
+                clearTimeout(timeoutId);
+                console.error(error);
+                if (error.name === 'AbortError') {
+                    showError('Tempo limite excedido. O sistema está demorando muito.');
+                } else {
+                    showError('Erro de conexão ou falha na geração: ' + error.message);
+                }
+                showStep('step1');
+            }
+        }
+
+        function copyPix() {
+            const copyText = document.getElementById("pixCodeText");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); // For mobile devices
+            
+            // Tenta usar a API moderna primeiro, fallback para execCommand
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(copyText.value).then(() => {
+                    showToast('Código PIX copiado!');
+                }, () => {
+                    fallbackCopy(copyText);
+                });
+            } else {
+                fallbackCopy(copyText);
+            }
+        }
+
+        function fallbackCopy(element) {
+            try {
+                document.execCommand('copy');
+                showToast('Código PIX copiado!');
+            } catch (err) {
+                showToast('Erro ao copiar. Tente selecionar e copiar manualmente.');
+            }
+        }
+
+        function confirmPayment() {
+            if (confirm('Confirma que já realizou o pagamento no seu banco?')) {
+                showStep('stepDetails');
+            }
+        }
+
+        async function finalizeRegistration() {
+            const whatsapp = document.getElementById('whatsapp').value;
+            const tshirt = document.querySelector('input[name="tshirt"]:checked').value;
+
+            if (!whatsapp) {
+                showError('Informe seu WhatsApp.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/complete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: userData.email,
+                        whatsapp,
+                        tshirt_size: tshirt,
+                        transaction_id: userData.paymentId // Usando ID do 7me como transação
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showStep('stepSuccess');
+                } else {
+                    showError('Erro ao salvar dados finais: ' + data.error);
+                }
+            } catch (e) {
+                showError('Erro de conexão.');
+            }
+        }
+    </script>
+</body>
+</html>

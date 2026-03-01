@@ -1,0 +1,6 @@
+node_modules
+registrations.db
+api_logs.json
+.env
+.DS_Store
+*.log
