@@ -85,64 +85,6 @@ app.get('/api/registrations', (req, res) => {
     });
 });
 
-// API: Exportar CSV (Excel) - Versão Simplificada e Segura
-app.get('/api/export-csv', (req, res) => {
-    try {
-        const auth = req.query.auth;
-        if (auth !== ADMIN_PASSWORD) {
-            return res.status(401).send('Acesso negado');
-        }
-
-        db.all(`SELECT * FROM registrations ORDER BY created_at DESC`, [], (err, rows) => {
-            if (err) {
-                console.error('Erro DB:', err);
-                return res.status(500).send('Erro no banco de dados: ' + err.message);
-            }
-
-            try {
-                // Cabeçalho simples
-                let csv = 'ID;Nome;Email;WhatsApp;Nascimento;CPF;Camiseta;Status;Metodo;ID_Pagamento;Data_Inscricao;Data_Confirmacao\n';
-
-                for (const row of rows) {
-                    // Função auxiliar MUITO segura
-                    const safe = (val) => {
-                        if (val === null || val === undefined) return '';
-                        // Remove quebras de linha e ponto e vírgula para não quebrar o CSV
-                        return String(val).replace(/[\n\r;]/g, ' ').trim();
-                    };
-
-                    csv += [
-                        safe(row.id),
-                        safe(row.name),
-                        safe(row.email),
-                        safe(row.whatsapp),
-                        safe(row.birthdate),
-                        safe(row.cpf),
-                        safe(row.tshirt_size),
-                        safe(row.payment_status),
-                        safe(row.payment_method),
-                        safe(row.payment_id),
-                        safe(row.created_at),
-                        safe(row.payment_confirmed_at)
-                    ].join(';') + '\n';
-                }
-
-                res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-                res.setHeader('Content-Disposition', 'attachment; filename=inscritos.csv');
-                res.write('\uFEFF'); // BOM para Excel
-                res.send(csv);
-
-            } catch (innerErr) {
-                console.error('Erro ao montar CSV:', innerErr);
-                res.status(500).send('Erro ao montar arquivo CSV: ' + innerErr.message);
-            }
-        });
-    } catch (e) {
-        console.error('Erro fatal na rota CSV:', e);
-        res.status(500).send('Erro interno no servidor.');
-    }
-});
-
 // API: Login Check
 app.post('/api/login', (req, res) => {
     const { password } = req.body;

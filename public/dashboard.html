@@ -456,13 +456,42 @@
         }
 
         function downloadExcel() {
-            const token = sessionStorage.getItem(AUTH_KEY);
-            if (!token) {
-                alert('Faça login novamente');
+            // Pega os dados da tabela que já estão carregados na tela
+            const table = document.querySelector("table");
+            const rows = Array.from(table.querySelectorAll("tr"));
+            
+            // Remove a última linha se for "Carregando dados..." ou vazia
+            if (rows.length > 1 && rows[1].innerText.includes("Carregando")) {
+                alert("Aguarde os dados carregarem.");
                 return;
             }
-            // Abre o download em nova aba, passando o token na URL (seguro o suficiente para admin simples)
-            window.location.href = `/api/export-csv?auth=${encodeURIComponent(token)}`;
+
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // BOM para Excel
+            
+            rows.forEach((row, index) => {
+                const cols = row.querySelectorAll("th, td");
+                const rowData = [];
+                
+                cols.forEach((col, colIndex) => {
+                    // Ignora a coluna de "Ações" (índice 7)
+                    if (colIndex === 7) return;
+                    
+                    // Limpa o texto: remove quebras de linha e aspas duplas
+                    let text = col.innerText.replace(/"/g, '""').replace(/(\r\n|\n|\r)/gm, " ");
+                    rowData.push(`"${text}"`);
+                });
+                
+                csvContent += rowData.join(";") + "\r\n";
+            });
+
+            // Cria o link de download
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "inscritos_conectados_run.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         async function verifyPayment(id) {
