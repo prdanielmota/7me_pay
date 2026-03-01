@@ -107,6 +107,54 @@ app.post('/api/login', (req, res) => {
     }
 });
 
+// API: Verificar Pagamento (Admin)
+app.post('/api/verify-payment', (req, res) => {
+    // Autenticação simples
+    const auth = req.headers['x-admin-auth'];
+    if (auth !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Senha incorreta' });
+    }
+
+    const { id } = req.body;
+    
+    db.run(
+        `UPDATE registrations SET payment_status = 'verified' WHERE id = ?`,
+        [id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        }
+    );
+});
+
+// API: Inscrição Manual (Admin)
+app.post('/api/manual-register', (req, res) => {
+    // Autenticação simples
+    const auth = req.headers['x-admin-auth'];
+    if (auth !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Senha incorreta' });
+    }
+
+    const { name, email, whatsapp, tshirt_size, payment_status } = req.body;
+    
+    // Insere manualmente
+    db.run(
+        `INSERT INTO registrations (name, email, whatsapp, tshirt_size, payment_status, payment_method, created_at, payment_confirmed_at) 
+         VALUES (?, ?, ?, ?, ?, 'manual', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+        [name, email, whatsapp, tshirt_size, payment_status || 'verified'],
+        function(err) {
+            if (err) {
+                // Se for erro de email duplicado
+                if (err.message.includes('UNIQUE constraint failed')) {
+                    return res.status(400).json({ error: 'Email já cadastrado.' });
+                }
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ success: true, id: this.lastID });
+        }
+    );
+});
+
 // API: Gerar PIX (Automação)
 app.post('/api/generate-pix', (req, res) => {
     const { name, email } = req.body;
