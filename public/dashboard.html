@@ -216,6 +216,7 @@
                         <th>Nascimento</th>
                         <th>CPF</th>
                         <th>Camiseta</th>
+                        <th>Distância</th>
                         <th>Status</th>
                         <th>Ações</th>
                         <th>ID Pagamento</th>
@@ -225,7 +226,7 @@
                 </thead>
                 <tbody id="registrationsTable">
                     <tr>
-                        <td colspan="11" style="text-align: center;">Carregando dados...</td>
+                        <td colspan="12" style="text-align: center;">Carregando dados...</td>
                     </tr>
                 </tbody>
             </table>
@@ -246,6 +247,10 @@
                 <option value="M" selected>Camiseta M</option>
                 <option value="G">Camiseta G</option>
                 <option value="GG">Camiseta GG</option>
+            </select>
+            <select id="mDistance">
+                <option value="5km" selected>5 km</option>
+                <option value="10km">10 km</option>
             </select>
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <button onclick="saveManual()" class="btn-primary">Salvar</button>
@@ -275,6 +280,11 @@
                 <option value="M">M</option>
                 <option value="G">G</option>
                 <option value="GG">GG</option>
+            </select>
+            <label>Distância:</label>
+            <select id="eDistance">
+                <option value="5km">5 km</option>
+                <option value="10km">10 km</option>
             </select>
             <label>Status Pagamento:</label>
             <select id="eStatus">
@@ -436,6 +446,7 @@
                         <td>${birthDateDisplay}</td>
                         <td>${reg.cpf || '-'}</td>
                         <td>${reg.tshirt_size || '-'}</td>
+                        <td>${reg.distance || '-'}</td>
                         <td><span class="badge ${statusClass}">${statusText}</span></td>
                         <td>${actions}</td>
                         <td><small>${reg.payment_id || '-'}</small></td>
@@ -532,6 +543,7 @@
             const birthdate = document.getElementById('mBirthdate').value;
             const cpf = document.getElementById('mCpf').value;
             const tshirt = document.getElementById('mTshirt').value;
+            const distance = document.getElementById('mDistance').value;
 
             if (!name || !email) {
                 alert('Preencha pelo menos Nome e Email');
@@ -547,7 +559,7 @@
                         'x-admin-auth': token 
                     },
                     body: JSON.stringify({
-                        name, email, whatsapp, birthdate, cpf, tshirt_size: tshirt,
+                        name, email, whatsapp, birthdate, cpf, tshirt_size: tshirt, distance,
                         payment_status: 'verified' // Manual já entra como confirmado
                     })
                 });
@@ -579,6 +591,7 @@
             document.getElementById('eBirthdate').value = reg.birthdate || '';
             document.getElementById('eCpf').value = reg.cpf || '';
             document.getElementById('eTshirt').value = reg.tshirt_size || 'M';
+            document.getElementById('eDistance').value = reg.distance || '5km';
             document.getElementById('eStatus').value = reg.payment_status;
             document.getElementById('editModal').style.display = 'flex';
         }
@@ -595,6 +608,7 @@
             const birthdate = document.getElementById('eBirthdate').value;
             const cpf = document.getElementById('eCpf').value;
             const tshirt = document.getElementById('eTshirt').value;
+            const distance = document.getElementById('eDistance').value;
             const status = document.getElementById('eStatus').value;
 
             const token = sessionStorage.getItem(AUTH_KEY);
@@ -606,7 +620,7 @@
                         'x-admin-auth': token 
                     },
                     body: JSON.stringify({
-                        id, name, email, whatsapp, birthdate, cpf, tshirt_size: tshirt, payment_status: status
+                        id, name, email, whatsapp, birthdate, cpf, tshirt_size: tshirt, distance, payment_status: status
                     })
                 });
 

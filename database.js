@@ -33,6 +33,7 @@ db.serialize(() => {
         birthdate TEXT,
         cpf TEXT,
         tshirt_size TEXT,
+        distance TEXT,
         payment_confirmed_at DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);

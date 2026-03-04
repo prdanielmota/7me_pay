@@ -82,6 +82,13 @@
                     <label><input type="radio" name="tshirt" value="GG"> GG</label>
                 </div>
             </div>
+            <div class="form-group">
+                <label>Distância:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="distance" value="5km" checked> 5 km</label>
+                    <label><input type="radio" name="distance" value="10km"> 10 km</label>
+                </div>
+            </div>
             
             <div class="form-group checkbox-group" style="display: flex; align-items: flex-start; gap: 10px; margin-top: 20px;">
                 <input type="checkbox" id="terms" required style="width: 20px; height: 20px; margin-top: 2px;">
@@ -174,6 +181,7 @@
             const birthdate = document.getElementById('birthdate').value;
             const cpf = document.getElementById('cpf').value.trim();
             const tshirt = document.querySelector('input[name="tshirt"]:checked').value;
+            const distance = document.querySelector('input[name="distance"]:checked').value;
             const terms = document.getElementById('terms').checked;
 
             if (!name || !email || !email.includes('@')) {
@@ -181,8 +189,8 @@
                 return;
             }
 
-            if (!whatsapp || !birthdate || !cpf) {
-                showError('Por favor, preencha todos os campos (WhatsApp, Data Nasc. e CPF).');
+            if (!whatsapp || !birthdate || !cpf || !distance) {
+                showError('Por favor, preencha todos os campos (WhatsApp, Data Nasc., CPF e Distância).');
                 return;
             }
 
@@ -204,7 +212,7 @@
                 const response = await fetch('/api/generate-pix', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, whatsapp, birthdate, cpf, tshirt_size: tshirt }),
+                    body: JSON.stringify({ name, email, whatsapp, birthdate, cpf, tshirt_size: tshirt, distance }),
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);

@@ -123,13 +123,13 @@ app.post('/api/manual-register', (req, res) => {
         return res.status(401).json({ error: 'Senha incorreta' });
     }
 
-    const { name, email, whatsapp, birthdate, cpf, tshirt_size, payment_status } = req.body;
+    const { name, email, whatsapp, birthdate, cpf, tshirt_size, distance, payment_status } = req.body;
     
     // Insere manualmente
     db.run(
-        `INSERT INTO registrations (name, email, whatsapp, birthdate, cpf, tshirt_size, payment_status, payment_method, created_at, payment_confirmed_at) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-        [name, email, whatsapp, birthdate, cpf, tshirt_size, payment_status || 'verified'],
+        `INSERT INTO registrations (name, email, whatsapp, birthdate, cpf, tshirt_size, distance, payment_status, payment_method, created_at, payment_confirmed_at) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'manual', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+        [name, email, whatsapp, birthdate, cpf, tshirt_size, distance, payment_status || 'verified'],
         function(err) {
             if (err) {
                 // Se for erro de email duplicado
@@ -151,11 +151,11 @@ app.post('/api/update-registration', (req, res) => {
         return res.status(401).json({ error: 'Senha incorreta' });
     }
 
-    const { id, name, email, whatsapp, birthdate, cpf, tshirt_size, payment_status } = req.body;
+    const { id, name, email, whatsapp, birthdate, cpf, tshirt_size, distance, payment_status } = req.body;
     
     db.run(
-        `UPDATE registrations SET name = ?, email = ?, whatsapp = ?, birthdate = ?, cpf = ?, tshirt_size = ?, payment_status = ? WHERE id = ?`,
-        [name, email, whatsapp, birthdate, cpf, tshirt_size, payment_status, id],
+        `UPDATE registrations SET name = ?, email = ?, whatsapp = ?, birthdate = ?, cpf = ?, tshirt_size = ?, distance = ?, payment_status = ? WHERE id = ?`,
+        [name, email, whatsapp, birthdate, cpf, tshirt_size, distance, payment_status, id],
         function(err) {
             if (err) {
                 if (err.message.includes('UNIQUE constraint failed')) {
@@ -190,13 +190,13 @@ app.post('/api/delete-registration', (req, res) => {
 
 // API: Gerar PIX (Automação)
 app.post('/api/generate-pix', (req, res) => {
-    const { name, email, whatsapp, birthdate, cpf, tshirt_size } = req.body;
-    if (!name || !email || !whatsapp || !tshirt_size || !birthdate || !cpf) {
-        console.log('Faltando dados:', { name, email, whatsapp, tshirt_size, birthdate, cpf }); // Debug
+    const { name, email, whatsapp, birthdate, cpf, tshirt_size, distance } = req.body;
+    if (!name || !email || !whatsapp || !tshirt_size || !birthdate || !cpf || !distance) {
+        console.log('Faltando dados:', { name, email, whatsapp, tshirt_size, birthdate, cpf, distance }); // Debug
         return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
     }
 
-    console.log(`Iniciando geração de PIX para: ${name} (${email}), T-Shirt: ${tshirt_size}`);
+    console.log(`Iniciando geração de PIX para: ${name} (${email}), T-Shirt: ${tshirt_size}, Distância: ${distance}`);
 
     // Executa o script de automação como um processo filho
     const child = spawn('node', ['services/generate_pix.js', name, email]);
@@ -228,18 +228,19 @@ app.post('/api/generate-pix', (req, res) => {
                 const paymentId = result.paymentId || null;
                 
                 db.run(
-                    `INSERT INTO registrations (name, email, whatsapp, birthdate, cpf, tshirt_size, payment_status, payment_method, payment_id) 
-                     VALUES (?, ?, ?, ?, ?, ?, 'pending_pix', 'pix', ?)
+                    `INSERT INTO registrations (name, email, whatsapp, birthdate, cpf, tshirt_size, distance, payment_status, payment_method, payment_id) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, 'pending_pix', 'pix', ?)
                      ON CONFLICT(email) DO UPDATE SET 
                      name = excluded.name,
                      whatsapp = excluded.whatsapp,
                      birthdate = excluded.birthdate,
                      cpf = excluded.cpf,
                      tshirt_size = excluded.tshirt_size,
+                     distance = excluded.distance,
                      payment_status = 'pending_pix',
                      payment_method = 'pix',
                      payment_id = excluded.payment_id`,
-                    [name, email, whatsapp, birthdate, cpf, tshirt_size, paymentId],
+                    [name, email, whatsapp, birthdate, cpf, tshirt_size, distance, paymentId],
                     (err) => {
                         if (err) console.error('Erro ao salvar no banco:', err);
                     }
