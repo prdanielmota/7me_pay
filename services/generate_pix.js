@@ -46,7 +46,7 @@ if (!name || !email) {
         });
 
         // Navigate
-        await page.goto('https://7me.app/71/r8etv8', { waitUntil: 'networkidle' });
+        await page.goto('https://7me.app/71/wqogfi', { waitUntil: 'networkidle' });
 
         // Fill Form
         const nameInput = page.locator('input[name="donorName"]:visible').first();
